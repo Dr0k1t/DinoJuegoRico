@@ -31,15 +31,19 @@ public class GameView extends View {
     private final float[] posXObs = new float[8];
 
     private final Paint pincel = new Paint();
+    private final Paint pincelTexto = new Paint();
 
     private float unidad;
     private float sueloY;
     private float dinoY;      // borde inferior del dinosaurio (pixeles)
     private float velocidadY; // pixeles por frame, positivo hacia abajo
+    private boolean juegoTerminado;
 
     public GameView(Context context) {
         super(context);
         pincel.setColor(COLOR_ELEMENTOS);
+        pincelTexto.setColor(COLOR_ELEMENTOS);
+        pincelTexto.setAntiAlias(true);
     }
 
     @Override
@@ -48,19 +52,27 @@ public class GameView extends View {
         unidad = alto / 100f;
         sueloY = 80f * unidad;
         pincel.setStrokeWidth(0.5f * unidad);
+        pincelTexto.setTextSize(5f * unidad);
+        reiniciar();
+    }
+
+    // Deja todo como al inicio de la partida
+    private void reiniciar() {
         dinoY = sueloY;
         velocidadY = 0f;
-        // El primer obstaculo empieza en el borde derecho y los demas detras, en orden
         posXObs[0] = getWidth();
         for (int i = 1; i < 8; i++) {
             posXObs[i] = posXObs[i - 1] + separacionObs[i] * unidad;
         }
+        juegoTerminado = false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent evento) {
         if (evento.getActionMasked() == MotionEvent.ACTION_DOWN) {
-            if (dinoY >= sueloY) {
+            if (juegoTerminado) {
+                reiniciar();
+            } else if (dinoY >= sueloY) {
                 // Solo salta si esta en el suelo (sin doble salto)
                 velocidadY = -IMPULSO_SALTO * unidad;
             }
@@ -88,11 +100,26 @@ public class GameView extends View {
                 posXObs[i] = posXObs[anterior] + separacionObs[i] * unidad;
             }
         }
+
+        // Colision: interseccion del rectangulo del dinosaurio con cada obstaculo
+        float dinoIzq = DINO_X * unidad;
+        float dinoDer = dinoIzq + DINO_ANCHO * unidad;
+        float dinoArriba = dinoY - DINO_ALTO * unidad;
+        for (int i = 0; i < 8; i++) {
+            float obsIzq = posXObs[i];
+            float obsDer = obsIzq + anchoObs[i] * unidad;
+            float obsArriba = sueloY - altoObs[i] * unidad;
+            if (dinoIzq < obsDer && dinoDer > obsIzq && dinoArriba < sueloY && dinoY > obsArriba) {
+                juegoTerminado = true;
+            }
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        actualizar();
+        if (!juegoTerminado) {
+            actualizar();
+        }
 
         canvas.drawColor(COLOR_FONDO);
         canvas.drawLine(0f, sueloY, getWidth(), sueloY, pincel);
@@ -101,6 +128,11 @@ public class GameView extends View {
         for (int i = 0; i < 8; i++) {
             canvas.drawRect(posXObs[i], sueloY - altoObs[i] * unidad,
                     posXObs[i] + anchoObs[i] * unidad, sueloY, pincel);
+        }
+
+        if (juegoTerminado) {
+            pincelTexto.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("GAME OVER - toca para reiniciar", getWidth() / 2f, 40f * unidad, pincelTexto);
         }
 
         postInvalidateOnAnimation();
