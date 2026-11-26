@@ -38,6 +38,7 @@ public class GameView extends View {
     private float dinoY;      // borde inferior del dinosaurio (pixeles)
     private float velocidadY; // pixeles por frame, positivo hacia abajo
     private boolean juegoTerminado;
+    private int puntaje;
 
     public GameView(Context context) {
         super(context);
@@ -65,6 +66,7 @@ public class GameView extends View {
             posXObs[i] = posXObs[i - 1] + separacionObs[i] * unidad;
         }
         juegoTerminado = false;
+        puntaje = 0;
     }
 
     @Override
@@ -113,6 +115,8 @@ public class GameView extends View {
                 juegoTerminado = true;
             }
         }
+
+        puntaje++;
     }
 
     @Override
@@ -129,6 +133,10 @@ public class GameView extends View {
             canvas.drawRect(posXObs[i], sueloY - altoObs[i] * unidad,
                     posXObs[i] + anchoObs[i] * unidad, sueloY, pincel);
         }
+
+        // Puntaje arriba a la derecha
+        pincelTexto.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText(String.valueOf(puntaje), getWidth() - 3f * unidad, 8f * unidad, pincelTexto);
 
         if (juegoTerminado) {
             pincelTexto.setTextAlign(Paint.Align.CENTER);
