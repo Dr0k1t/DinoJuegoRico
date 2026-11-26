@@ -21,6 +21,14 @@ public class GameView extends View {
     // Velocidades fijas en unidades por frame
     private static final float GRAVEDAD = 0.25f;
     private static final float IMPULSO_SALTO = 4.2f;
+    private static final float VELOCIDAD_OBSTACULOS = 1.3f;
+
+    // Orden fijo de los 8 obstaculos (unidades); se repite en bucle.
+    // separacionObs[i] es la distancia desde el obstaculo anterior hasta el obstaculo i.
+    private final float[] anchoObs = {3f, 5f, 4f, 7f, 3f, 6f, 4f, 5f};
+    private final float[] altoObs = {8f, 6f, 12f, 7f, 14f, 9f, 10f, 6f};
+    private final float[] separacionObs = {60f, 55f, 80f, 65f, 90f, 50f, 75f, 70f};
+    private final float[] posXObs = new float[8];
 
     private final Paint pincel = new Paint();
 
@@ -42,6 +50,11 @@ public class GameView extends View {
         pincel.setStrokeWidth(0.5f * unidad);
         dinoY = sueloY;
         velocidadY = 0f;
+        // El primer obstaculo empieza en el borde derecho y los demas detras, en orden
+        posXObs[0] = getWidth();
+        for (int i = 1; i < 8; i++) {
+            posXObs[i] = posXObs[i - 1] + separacionObs[i] * unidad;
+        }
     }
 
     @Override
@@ -63,6 +76,18 @@ public class GameView extends View {
             dinoY = sueloY;
             velocidadY = 0f;
         }
+
+        for (int i = 0; i < 8; i++) {
+            posXObs[i] -= VELOCIDAD_OBSTACULOS * unidad;
+        }
+        // El obstaculo que sale por la izquierda se coloca detras del anterior en el ciclo,
+        // que siempre es el que esta mas a la derecha
+        for (int i = 0; i < 8; i++) {
+            if (posXObs[i] + anchoObs[i] * unidad < 0f) {
+                int anterior = (i + 7) % 8;
+                posXObs[i] = posXObs[anterior] + separacionObs[i] * unidad;
+            }
+        }
     }
 
     @Override
@@ -72,6 +97,11 @@ public class GameView extends View {
         canvas.drawColor(COLOR_FONDO);
         canvas.drawLine(0f, sueloY, getWidth(), sueloY, pincel);
         dibujarDino(canvas);
+
+        for (int i = 0; i < 8; i++) {
+            canvas.drawRect(posXObs[i], sueloY - altoObs[i] * unidad,
+                    posXObs[i] + anchoObs[i] * unidad, sueloY, pincel);
+        }
 
         postInvalidateOnAnimation();
     }
